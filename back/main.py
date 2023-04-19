@@ -103,46 +103,39 @@ def mergeDataSets(plot=False):
 
 def createDataFrame(m_ds):
 
-    def _key_correspondente(k):
-        if (k == "kid"):
-            return 0
-        elif k == "teen":
-            return 1
-        elif k == "yadult":
-            return 2
-        elif k == "adult":
-            return 3
-
     # inverter rows e values do merged_ds
     m_ds_invertido = {}
 
     for k, v in m_ds.items():
         for i in v:
-            m_ds_invertido[i] = _key_correspondente(k)
+            # print(f' file = {i}, age = {k}')
+            m_ds_invertido[i] = k
 
     # add coluna de idade
-    df = pd.DataFrame.from_dict(m_ds_invertido, orient='index')
     df = pd.DataFrame()
     df["file"] = m_ds_invertido.keys()
     df["class"] = m_ds_invertido.values()
+    
+    return df
+
+
+def main():
+    merged_ds = mergeDataSets()
+    df = createDataFrame(merged_ds)
     # print(df)
 
     x = df["file"]
     y = df["class"]
 
+
     X_train, X_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.3, stratify=y, random_state=42)
+        x, y, test_size=0.2, stratify=y, random_state=42)
 
     print(X_train.shape)
     print(X_train.head())
 
     print(X_test.shape)
     print(X_test.head())
-
-
-def main():
-    merged_ds = mergeDataSets(True)
-    createDataFrame(merged_ds)
 
 
 if __name__ == "__main__":
