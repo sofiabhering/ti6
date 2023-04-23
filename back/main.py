@@ -1,7 +1,16 @@
 import os
-import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import shutil
+
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers.core import Activation, Flatten, Dense
+from keras.layers import GlobalAveragePooling2D, Rescaling
+from tensorflow.keras import layers
+
+from utils import *
 
 PATH_FA = './datasets/face_age/'
 PATH_UTK = './datasets/utk/'
@@ -31,69 +40,33 @@ def plotNumImgsPerAge():
     pltDataDistribution(images)
 
 
-def pltDataDistribution(dic, set_labels=True, save=False, name='Ages x Number of Images'):
+def processDataSets(plot=False):
     """
-    Plota a distribuição de dados de um determinado dataset
-
-    Parametros:
-    -----------
-    dic:
-        Dict contendo imgs
-
-    set_labels:
-        Opcional, mostrar labels para cada value do dict
-
-    save:
-        Opcional, salva grafico em _graficos/
-
-    name:
-        Opcional, nome do grafico
-
-    """
-
-    _values = []
-    for k, v in dic.items():
-        # print(f"{k}: tam = {len(v)}, imagens = {v}")
-        _values.append(len(v))
-        # _values.append(v)
-    x = dic.keys()
-    y = _values
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-    _bar = ax.bar(x, y, color='g')
-
-    ax.set(xlabel="Ages", ylabel="Number of Images",
-           title=name)
-
-    if set_labels:
-        ax.bar_label(_bar, rotation=90, fontsize=8, padding=3, color="#202020")
-
-    plt.savefig(f'./_graficos/barchart_{name}') if save else plt.show()
-
-
-def mergeDataSets(plot=False):
-    """
-    Combina os datasets em um só, até idade 18
+    Processa os datasets, separando entre as classes <= 18 e > 18 
 
     Parametros:
     -----------
     plot:
-        Opcional, plota gráfioco dos datasets
+        Opcional, plota gráfico dos datasets
     """
     dir_fa = os.listdir(PATH_FA)
     dir_utk = os.listdir(PATH_UTK)
 
-    _imgs = {i: [] for i in range(1, 19)}
+    _imgs = {
+        "0": [],  # under 18
+        "1": []
+    }
 
-    for i in range(18):
-        folder = dir_fa[i]
-        curr_path = os.path.join(PATH_FA, folder)
-        _imgs[int(folder)].extend(os.listdir(curr_path))
+    for age in dir_fa:
+        curr_path = os.path.join(PATH_FA, age)
+        key = "0" if int(age) <= 18 else "1"
+        _imgs[key].extend(age + '_' + name for name in os.listdir(curr_path))
+        # _imgs[key].extend(os.listdir(curr_path))
 
-    for file in dir_utk:
-        age = int(file.split('_')[0])
-        if age <= 18:
-            _imgs[age].append(file)
+    # for file in dir_utk:
+    #     age = int(file.split('_')[0])
+    #     key = "0" if int(age) <= 18 else "1"
+    #     _imgs[key].append(file)
 
     if plot:
         pltDataDistribution(_imgs)
@@ -101,41 +74,98 @@ def mergeDataSets(plot=False):
     return _imgs
 
 
-def createDataFrame(m_ds):
+def createModel(input_shape):
+    # Definimos que estamos criando um modelo sequencial
+    model = Sequential()
 
-    # inverter rows e values do merged_ds
-    m_ds_invertido = {}
+    # Primeira camada do modelo:
+    model.add(Conv2D(20, (5, 5), padding="same", input_shape=input_shape))
+    model.add(Activation("relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-    for k, v in m_ds.items():
-        for i in v:
-            # print(f' file = {i}, age = {k}')
-            m_ds_invertido[i] = k
+    # Segunda camada do modelo:
+    model.add(Conv2D(50, (5, 5), padding="same"))
+    model.add(Activation("relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-    # add coluna de idade
-    df = pd.DataFrame()
-    df["file"] = m_ds_invertido.keys()
-    df["class"] = m_ds_invertido.values()
-    
-    return df
+    # Primeira camada fully connected
+    model.add(Flatten())
+    # model.add(GlobalAveragePooling2D())
+    model.add(Dense(500))
+    model.add(Activation("relu"))
+
+    # Classificador softmax
+    model.add(Dense(2))
+    model.add(Activation("softmax"))
+    return model
 
 
 def main():
-    merged_ds = mergeDataSets()
-    df = createDataFrame(merged_ds)
-    # print(df)
+    input_shape = (200, 200, 3)  # Height, Width, Depth (1 -> cinza, 3 -> rgb)
+    height = 200
+    width = 200
+    batch_size = 32
+    epochs = 10
 
-    x = df["file"]
-    y = df["class"]
+    PATH_MERGED = './datasets/merged_ds/'
 
+    if not os.path.exists(PATH_MERGED):
+        merged_ds = processDataSets()
+        os.makedirs('./datasets/merged_ds/0/')
+        for i in merged_ds['0']:
+            age, filename = i.split('_')
+            src = os.path.join(PATH_FA+age+'/', filename)
+            shutil.copy(src, './datasets/merged_ds/0/')
+        os.makedirs('./datasets/merged_ds/1/')
+        for i in merged_ds['1']:
+            age, filename = i.split('_')
+            src = os.path.join(PATH_FA+age+'/', filename)
+            shutil.copy(src, './datasets/merged_ds/1/')
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, stratify=y, random_state=42)
+    train_ds = tf.keras.utils.image_dataset_from_directory(
+        PATH_MERGED,
+        seed=123,
+        validation_split=0.2,
+        subset="training",
+        color_mode="rgb",
+        image_size=(height, width),
+        batch_size=batch_size,
+    )
 
-    print(X_train.shape)
-    print(X_train.head())
+    val_ds = tf.keras.utils.image_dataset_from_directory(
+        PATH_MERGED,
+        seed=123,
+        validation_split=0.2,
+        subset="validation",
+        color_mode="rgb",
+        image_size=(height, width),
+        batch_size=batch_size,
+    )
 
-    print(X_test.shape)
-    print(X_test.head())
+    # rescaling os valores de RGB entre 0 e 1
+    rescaling_layer = Rescaling(1./255)
+
+    train_ds = train_ds.map(lambda x, y: (
+        rescaling_layer(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    val_ds = val_ds.map(lambda x, y: (rescaling_layer(x), y),
+                        num_parallel_calls=tf.data.AUTOTUNE)
+
+    model = createModel(input_shape)
+
+    model.compile(optimizer='adam',
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                      from_logits=True),
+                  metrics=["accuracy"])
+
+    # model.summary()
+
+    H = model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=epochs
+    )
+
+    plot_results(H.history, range(epochs))
 
 
 if __name__ == "__main__":

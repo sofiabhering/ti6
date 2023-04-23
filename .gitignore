@@ -1,2 +1,4 @@
 back/_graficos
 back/env
+back/__pycache__/
+back/planejamento.txt
