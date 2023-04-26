@@ -1,4 +1,5 @@
 import os
+from keras.callbacks import ModelCheckpoint
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import shutil
@@ -7,14 +8,14 @@ import tensorflow as tf
 from keras.models import Sequential
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.core import Activation, Flatten, Dense
-from keras.layers import GlobalAveragePooling2D, Rescaling
+from keras.layers import GlobalAveragePooling2D, GlobalAvgPool2D, Rescaling
 from tensorflow.keras import layers
 
 from utils import *
 
 PATH_FA = './datasets/face_age/'
 PATH_UTK = './datasets/utk/'
-
+PATH_MERGED = './datasets/merged_ds/'
 
 def plotNumImgsPerAge():
 
@@ -61,12 +62,6 @@ def processDataSets(plot=False):
         curr_path = os.path.join(PATH_FA, age)
         key = "0" if int(age) <= 18 else "1"
         _imgs[key].extend(age + '_' + name for name in os.listdir(curr_path))
-        # _imgs[key].extend(os.listdir(curr_path))
-
-    # for file in dir_utk:
-    #     age = int(file.split('_')[0])
-    #     key = "0" if int(age) <= 18 else "1"
-    #     _imgs[key].append(file)
 
     if plot:
         pltDataDistribution(_imgs)
@@ -79,48 +74,35 @@ def createModel(input_shape):
     model = Sequential()
 
     # Primeira camada do modelo:
-    model.add(Conv2D(20, (5, 5), padding="same", input_shape=input_shape))
-    model.add(Activation("relu"))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Conv2D(32, 3, padding="same",
+              activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
 
     # Segunda camada do modelo:
-    model.add(Conv2D(50, (5, 5), padding="same"))
-    model.add(Activation("relu"))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Conv2D(64, 3, padding="same",
+              activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Primeira camada fully connected
-    model.add(Flatten())
-    # model.add(GlobalAveragePooling2D())
-    model.add(Dense(500))
-    model.add(Activation("relu"))
+    # Terceira camada do modelo:
+    model.add(Conv2D(128, 3, padding="same",
+              activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Classificador softmax
-    model.add(Dense(2))
-    model.add(Activation("softmax"))
+    model.add(GlobalAveragePooling2D())
+
+    model.add(Dense(132, activation='relu'))
+    model.add(Dense(2, activation='softmax'))
+
     return model
 
-
-def main():
+def run():
     input_shape = (200, 200, 3)  # Height, Width, Depth (1 -> cinza, 3 -> rgb)
     height = 200
     width = 200
     batch_size = 32
     epochs = 10
-
-    PATH_MERGED = './datasets/merged_ds/'
-
-    if not os.path.exists(PATH_MERGED):
-        merged_ds = processDataSets()
-        os.makedirs('./datasets/merged_ds/0/')
-        for i in merged_ds['0']:
-            age, filename = i.split('_')
-            src = os.path.join(PATH_FA+age+'/', filename)
-            shutil.copy(src, './datasets/merged_ds/0/')
-        os.makedirs('./datasets/merged_ds/1/')
-        for i in merged_ds['1']:
-            age, filename = i.split('_')
-            src = os.path.join(PATH_FA+age+'/', filename)
-            shutil.copy(src, './datasets/merged_ds/1/')
+    model_path = os.path.join(
+        './datasets/models/', "test-{epoch:02d}-{accuracy:.3f}-{val_accuracy:.3f}.model")
 
     train_ds = tf.keras.utils.image_dataset_from_directory(
         PATH_MERGED,
@@ -153,20 +135,42 @@ def main():
     model = createModel(input_shape)
 
     model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(
-                      from_logits=True),
+                  loss="sparse_categorical_crossentropy",
                   metrics=["accuracy"])
 
-    # model.summary()
+    model.summary()
 
-    H = model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=epochs
-    )
+    checkpoint_loss = ModelCheckpoint(
+        model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint_acc = ModelCheckpoint(
+        model_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+    checkpoints = [checkpoint_loss, checkpoint_acc]
+
+    H = model.fit(train_ds,
+                  validation_data=val_ds,
+                  epochs=epochs,
+                  verbose=1,
+                  callbacks=checkpoints)
 
     plot_results(H.history, range(epochs))
 
+def preprocess():
+    merged_ds = processDataSets(True)
+    if not os.path.exists(PATH_MERGED):
+        os.makedirs('./datasets/merged_ds/0/')
+        for i in merged_ds['0']:
+            age, filename = i.split('_')
+            src = os.path.join(PATH_FA+age+'/', filename)
+            shutil.copy(src, './datasets/merged_ds/0/')
+        os.makedirs('./datasets/merged_ds/1/')
+        for i in merged_ds['1']:
+            age, filename = i.split('_')
+            src = os.path.join(PATH_FA+age+'/', filename)
+            shutil.copy(src, './datasets/merged_ds/1/')
+
+def main():
+    preprocess()
+    run()
 
 if __name__ == "__main__":
     main()
