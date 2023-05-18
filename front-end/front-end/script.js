@@ -1,12 +1,11 @@
-// script.js
 document.getElementById('upload-form').addEventListener('submit', function(event) {
     event.preventDefault();
     var imageInput = document.getElementById('image-input');
     var resultContainer = document.getElementById('result-container');
-    resultContainer.classList.add('hidden');
+    // resultContainer.classList.add('hidden');
 
     if (imageInput.files.length === 0) {
-        alert('Please select an image to upload.');
+        alert('Selecione uma imagem');
         return;
     }
 
@@ -14,19 +13,26 @@ document.getElementById('upload-form').addEventListener('submit', function(event
     var formData = new FormData();
     formData.append('image', file);
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/predict', true);
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            var result = JSON.parse(xhr.responseText);
-            document.getElementById('result').textContent = 'Age: ' + result.age;
-            resultContainer.classList.remove('hidden');
-        } else {
-            alert('Error: ' + xhr.statusText);
+    fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        body: formData,
+        mode: 'cors',
+        headers: {
+            'Access-Control-Allow-Origin': '*', // Required for CORS support to work 
         }
-    };
-    xhr.onerror = function() {
-        alert('Error: ' + xhr.statusText);
-    };
-    xhr.send(formData);
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Response Error: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(result => {
+        document.getElementById('result').textContent = 'Age: ' + result.age;
+        // resultContainer.classList.remove('hidden');
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
 });
+

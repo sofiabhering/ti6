@@ -1,14 +1,12 @@
 import os
 from keras.callbacks import ModelCheckpoint
-import pandas as pd
-from sklearn.model_selection import train_test_split
 import shutil
 
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.core import Activation, Flatten, Dense
-from keras.layers import GlobalAveragePooling2D, GlobalAvgPool2D, Rescaling
+from keras.layers import GlobalAveragePooling2D, Rescaling
 from tensorflow.keras import layers
 
 from utils import *
@@ -83,14 +81,9 @@ def createModel(input_shape):
               activation="relu", input_shape=input_shape))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Terceira camada do modelo:
-    model.add(Conv2D(128, 3, padding="same",
-              activation="relu", input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
     model.add(GlobalAveragePooling2D())
 
-    model.add(Dense(132, activation='relu'))
+    model.add(Dense(128, activation='relu'))
     model.add(Dense(2, activation='softmax'))
 
     return model
@@ -107,7 +100,7 @@ def run():
     train_ds = tf.keras.utils.image_dataset_from_directory(
         PATH_MERGED,
         seed=123,
-        validation_split=0.2,
+        validation_split=0.3,
         subset="training",
         color_mode="rgb",
         image_size=(height, width),
@@ -117,7 +110,7 @@ def run():
     val_ds = tf.keras.utils.image_dataset_from_directory(
         PATH_MERGED,
         seed=123,
-        validation_split=0.2,
+        validation_split=0.3,
         subset="validation",
         color_mode="rgb",
         image_size=(height, width),
@@ -155,7 +148,7 @@ def run():
     plot_results(H.history, range(epochs))
 
 def preprocess():
-    merged_ds = processDataSets(True)
+    merged_ds = processDataSets()
     if not os.path.exists(PATH_MERGED):
         os.makedirs('./datasets/merged_ds/0/')
         for i in merged_ds['0']:

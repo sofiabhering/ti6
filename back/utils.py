@@ -25,7 +25,7 @@ def plot_results(history, epochs_range):
     plt.legend(loc='upper right')
     plt.title('Training and Validation Loss')
     os.makedirs('_graficos', exist_ok=True)
-    plt.savefig('_graficos/experiment_02.jpg')
+    plt.savefig('_graficos/experiment_7030_rgb.jpg')
 
 
 def pltDataDistribution(dic, set_labels=True, save=False, name='Ages x Number of Images'):
