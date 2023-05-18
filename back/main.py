@@ -133,10 +133,8 @@ def run():
 
     model.summary()
 
-    checkpoint_loss = ModelCheckpoint(
-        model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-    checkpoint_acc = ModelCheckpoint(
-        model_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+    checkpoint_loss = ModelCheckpoint( model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint_acc = ModelCheckpoint( model_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
     checkpoints = [checkpoint_loss, checkpoint_acc]
 
     H = model.fit(train_ds,

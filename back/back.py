@@ -15,7 +15,7 @@ def image_upload():
     image = request.files['image']
     image.save(f'./images/{image.filename}')
     
-    run(f'./images/{image.filename}')
+    run(f'./uploads/{image.filename}')
 
     app.logger.info('uploading')
     # send_file('./uploads/' + f'processed_{image.filename}', mimetype='image/jpeg'),
