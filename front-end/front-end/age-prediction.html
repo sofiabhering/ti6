@@ -1,29 +1,41 @@
 <!-- index.html -->
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>Age Predictor</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
 
-<head>
-  <title>Age Predictor</title>
-  <link rel="stylesheet" type="text/css" href="style.css">
-</head>
-
-<body>
-  <div id="container">
-    <h1>Age Predictor</h1>
-    <p class="subtitle">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Velit, quibusdam! Labore, libero nostrum, asperiores, placeat nobis incidunt pariatur nemo atque sapiente dolores aliquam temporibus. Perspiciatis sequi dignissimos obcaecati laboriosam dolorem nulla, ab id odio voluptas incidunt nostrum ratione est aliquam perferendis reiciendis temporibus quos totam ea inventore culpa nesciunt nemo?</p>
-    <div id="input-container">
-      <form id="upload-form">
-        <input type="file" id="image-input" accept="image/*" />
-        <button type="submit">Predict Age</button>
-      </form>
+  <body>
+    <div id="container">
+      <h1>Classificador de maioridade</h1>
+      <p class="subtitle">
+        Nosso site utiliza tecnologia de reconhecimento facial para prever a
+        idade de uma pessoa e determinar se ela é menor de idade ou não. A
+        ferramenta é fácil de usar, basta fazer o upload de uma imagem de rosto,
+        e pode ser útil para empresas, organizações e pais que precisam
+        verificar a idade de seus clientes ou filhos. Experimente agora nosso
+        site e obtenha uma estimativa precisa e confiável da idade de uma pessoa
+        em poucos segundos com nossa tecnologia avançada de reconhecimento
+        facial.
+      </p>
+      <div id="input-container">
+        <form id="upload-form" enctype="multipart/form-data">
+          <div id="selected-files"></div>
+          <div>
+            <label for="file-input" class="upload-button"
+              >Selecionar Imagens</label
+            >
+            <input id="file-input" type="file" name="files[]" multiple />
+            <button type="submit" class="upload-button">Enviar</button>
+          </div>
+        </form>
+      </div>
+      <div id="result-container" class="hidden">
+        <div id="image-gallery"></div>
+      </div>
     </div>
-    <div id="result-container">
-      <p id="result">Predicted age: <span id="predicted-age"></span></p>
-    </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
-
+    <script src="script.js"></script>
+  </body>
 </html>
-

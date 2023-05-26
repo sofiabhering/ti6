@@ -4,7 +4,6 @@ import os
 from utils import pltDataDistribution
 
 PATH_FA = './datasets/face_age/'
-PATH_UTK = './datasets/utk/'
 PATH_MERGED = './datasets/merged_ds/'
 
 
@@ -18,7 +17,6 @@ def processDataSets(plot=False):
         Opcional, plota gráfico dos datasets
     """
     dir_fa = os.listdir(PATH_FA)
-    dir_utk = os.listdir(PATH_UTK)
 
     _imgs = {
         "0": [],  # under 18
@@ -44,7 +42,7 @@ def plotNumImgsPerAge():
     images = {}
 
     dir_fa = os.listdir(PATH_FA)
-    dir_utk = sorted(os.listdir(PATH_UTK), key=get_age)
+    # dir_utk = sorted(os.listdir(PATH_UTK), key=get_age)
 
     for i in range(17):
         age = dir_fa[i]
@@ -52,10 +50,10 @@ def plotNumImgsPerAge():
         num_imgs = len(os.listdir(curr_path))
         images[int(age)] = num_imgs
 
-    for file in dir_utk:
-        age = int(file.split('_')[0])
-        if age < 18:
-            images[int(age)] += 1
+    # for file in dir_utk:
+    #     age = int(file.split('_')[0])
+    #     if age < 18:
+    #         images[int(age)] += 1
 
     pltDataDistribution(images)
 

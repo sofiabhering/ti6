@@ -1,38 +1,68 @@
-document.getElementById('upload-form').addEventListener('submit', function(event) {
+document
+  .getElementById("upload-form")
+  .addEventListener("submit", function (event) {
     event.preventDefault();
-    var imageInput = document.getElementById('image-input');
-    var resultContainer = document.getElementById('result-container');
-    // resultContainer.classList.add('hidden');
 
-    if (imageInput.files.length === 0) {
-        alert('Selecione uma imagem');
-        return;
+    var files = document.getElementById("file-input").files;
+    var formData = new FormData();
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      formData.append("images[]", file, file.name);
     }
 
-    var file = imageInput.files[0];
-    var formData = new FormData();
-    formData.append('image', file);
+    var request = new XMLHttpRequest();
+    request.open("POST", "http://127.0.0.1:5000/predict");
 
-    fetch('http://127.0.0.1:5000/predict', {
-        method: 'POST',
-        body: formData,
-        mode: 'cors',
-        headers: {
-            'Access-Control-Allow-Origin': '*', // Required for CORS support to work 
+    request.onload = function () {
+      if (request.status === 200) {
+        var response = JSON.parse(request.responseText);
+        var processedImages = response.processed_images;
+        var imageGallery = document.getElementById("image-gallery");
+        
+        // Clear previous images
+        imageGallery.innerHTML = "";
+    
+        for (var i = 0; i < processedImages.length; i++) {
+          var processedImage = processedImages[i];
+          var imageElement = document.createElement("img");
+          imageElement.src = "uploads/" + processedImage;
+          imageGallery.appendChild(imageElement);
         }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Response Error: ' + response.statusText);
-        }
-        return response.json();
-    })
-    .then(result => {
-        document.getElementById('result').textContent = 'Age: ' + result.age;
-        // resultContainer.classList.remove('hidden');
-    })
-    .catch(error => {
-        alert('Error: ' + error.message);
-    });
+    
+        resultContainer.classList.remove("hidden");
+      } else {
+        alert("Houve um erro ao enviar as imagens.");
+      }
+    };
+
+    request.send(formData);
+  });
+
+document.getElementById("file-input").addEventListener("change", function () {
+  var files = Array.from(this.files);
+  var selectedFilesContainer = document.getElementById("selected-files");
+
+  selectedFilesContainer.innerHTML = "";
+
+  files.forEach(function (file) {
+    var reader = new FileReader();
+
+    reader.onload = function (event) {
+      var img = document.createElement("img");
+      img.src = event.target.result;
+      selectedFilesContainer.appendChild(img);
+    };
+
+    reader.readAsDataURL(file);
+  });
 });
 
+document
+  .getElementById("download-button")
+  .addEventListener("click", function () {
+    var links = document.querySelectorAll("#download-links a");
+    for (var i = 0; i < links.length; i++) {
+      links[i].click();
+    }
+  });

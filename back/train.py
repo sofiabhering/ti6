@@ -8,6 +8,7 @@ from keras.layers import GlobalAveragePooling2D, Rescaling
 from tensorflow.keras import layers
 
 from utils import plot_results
+import time
 
 PATH_MERGED = './datasets/merged_ds/'
 
@@ -24,7 +25,7 @@ def createModel(input_shape):
     model.add(Conv2D(64, (3, 3),  activation="relu"))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Segunda camada do modelo:
+    # Terceira camada do modelo:
     model.add(Conv2D(128, (3, 3),  activation="relu"))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
@@ -41,7 +42,7 @@ def run():
     height = 200
     width = 200
     batch_size = 32
-    epochs = 15
+    epochs = 12
     model_path = os.path.join('./datasets/models/', "test-{epoch:02d}-{accuracy:.3f}-{val_accuracy:.3f}.model")
 
     train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -72,29 +73,33 @@ def run():
         layers.RandomRotation(0.2),
     ])
 
-    train_ds = train_ds.map(lambda x, y: ( rescaling_layer(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    train_ds = train_ds.map(lambda x, y: (rescaling_layer(x), y), num_parallel_calls=tf.data.AUTOTUNE)
     val_ds = val_ds.map(lambda x, y: (rescaling_layer(x), y), num_parallel_calls=tf.data.AUTOTUNE)
 
-    train_ds = train_ds.map(lambda x, y: ( data_augmentation(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    train_ds = train_ds.map(lambda x, y: (data_augmentation(x), y), num_parallel_calls=tf.data.AUTOTUNE)
     val_ds = val_ds.map(lambda x, y: (data_augmentation(x), y), num_parallel_calls=tf.data.AUTOTUNE)
 
     model = createModel(input_shape)
 
     model.compile(optimizer='adam',
                   loss="sparse_categorical_crossentropy",
-                  metrics=["accuracy"])
+                  metrics=["accuracy"],)
 
     model.summary()
 
     checkpoint_loss = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     checkpoint_acc = ModelCheckpoint(model_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
     checkpoints = [checkpoint_loss, checkpoint_acc]
-
+    
+    start = time.time()
     H = model.fit(train_ds,
                   validation_data=val_ds,
                   epochs=epochs,
                   verbose=1,
-                  callbacks=checkpoints)
+                  callbacks=checkpoints,)
+    end = time.time()
+
+    print(f"Tempo de treinamento: {end - start} segundos")
 
     plot_results(H.history, range(epochs))
 
