@@ -44,7 +44,7 @@ def blur(image, name):
             # blurred_region = cv2.GaussianBlur(region, (25, 25), 0)
             processed_img[y:y+h, x:x+w] = black_square
 
-    cv2.imwrite(f'./uploads/processed_{name}.jpg', processed_img)
+    cv2.imwrite(f'../front-end/front-end/uploads/processed_{name}', processed_img)
 
 
 def process_image(file, model, process_name):
@@ -80,6 +80,6 @@ def run(image_path, name):
         os.remove(f'./images/{file}')
 
 
-# name = 'test3.jpg'
+# name = 'test2.jpg'
 # if __name__ == '__main__':
-#     run(f'./uploads/{name}')
+#     run(f'./uploads/{name}',name)

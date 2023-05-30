@@ -7,7 +7,8 @@ from face_classifier import run
 
 
 app = Flask(__name__)
-cors = CORS(app,support_credentials=True)
+cors = CORS(app, support_credentials=True)
+
 
 @app.route('/predict', methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -16,13 +17,13 @@ def image_upload():
 
     print(f'files -> {files}', file=sys.stdout)
 
-    processed_images = []  
+    processed_images = []
     for file in files:
         filename = file.filename
         print(filename, file=sys.stdout)
         file.save(f'./uploads/{filename}')
-        processed_images.append(f'./processed_{filename}')   
-        run(f'./uploads/{filename}',filename)
+        processed_images.append(f'processed_{filename}')
+        run(f'./uploads/{filename}', filename)
 
     print(processed_images, file=sys.stdout)
     return jsonify({'processed_images': processed_images}), 200
