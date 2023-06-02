@@ -15,13 +15,13 @@ document
       formData.append("images[]", file, file.name);
     }
 
-    fetch("http://127.0.0.1:5000/predict", {
+    fetch("http://20.226.5.180:5000/predict", {
       method: "POST",
       body: formData,
-      // mode: "cors",
-      // headers: {
-      //   "Access-Control-Allow-Origin": "*", // Required for CORS support to work
-      // },
+      mode: "cors",
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+      },
   })
       .then(function (response) {
         if (!response.ok) {

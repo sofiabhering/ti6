@@ -44,7 +44,8 @@ def blur(image, name):
             # blurred_region = cv2.GaussianBlur(region, (25, 25), 0)
             processed_img[y:y+h, x:x+w] = black_square
 
-    cv2.imwrite(f'../front-end/front-end/uploads/processed_{name}', processed_img)
+    cv2.imwrite(
+        f'../front-end/front-end/uploads/processed_{name}', processed_img)
 
 
 def process_image(file, model, process_name):
@@ -56,15 +57,13 @@ def process_image(file, model, process_name):
 
 
 def predict(model, files):
-    print('\t-processing-')
-
-    with Pool() as pool:
-        func = partial(process_image, model=model, process_name=current_process().name)
-        results = pool.map(func, files)
-
-    for file, class_index, confidence, process_name in results:
-        print(f"{file} (processed by {process_name}) most likely belongs to {class_index} with a {100 * confidence} percent confidence.")
-        img_classes[file[:-4]] = class_index
+    for i, file in enumerate(files):
+        img_array = PIL.Image.open('./images/'+file)
+        img_array = tf.expand_dims(img_array, 0)
+        predictions = model.predict(img_array)
+        score = tf.nn.softmax(predictions[0])
+        img_classes[file[:-4]] = np.argmax(score)
+        print(f"{file} most likely belongs to {np.argmax(score)} with a {100 * np.max(score)} percent confidence.")
 
 
 def run(image_path, name):
@@ -80,6 +79,6 @@ def run(image_path, name):
         os.remove(f'./images/{file}')
 
 
-# name = 'test2.jpg'
-# if __name__ == '__main__':
-#     run(f'./uploads/{name}',name)
+name = 'test2.jpg'
+if __name__ == '__main__':
+    run(f'./uploads/{name}',name)
